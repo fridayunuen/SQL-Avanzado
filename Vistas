@@ -1,0 +1,54 @@
+USE AdventureWorks2019
+GO
+
+-- Vista Horizontal: Es aquella que en el que el número de registros es menor que en la tabla original.
+CREATE VIEW SantaCruz
+AS
+SELECT *
+FROM person.Address
+WHERE City = 'Santa Cruz'
+
+-- Vista Vertical: Es aquella que en el que el número de campos es menor que en la tabla original.
+CREATE VIEW DireccionPersonas
+AS
+SELECT AddressID, AddressLine1,City, PostalCode
+FROM person.Address;
+
+-- Subconjuntos fila/columna
+--Es aquella que en el que el número de campos y registros es menor y que en la tabla original
+CREATE VIEW SantaCruz2
+AS
+SELECT AddressID, AddressLine1,City,
+PostalCode
+FROM person.Address
+WHERE City = 'Santa Cruz'
+
+-- Compuestas
+CREATE VIEW FechaContrato
+AS
+SELECT p.FirstName, p.LastName, e.BusinessEntityID, e.HireDate
+FROM HumanResources.Employee AS e
+JOIN Person.Person AS p ON e.BusinessEntityID =
+p.BusinessEntityID ;
+
+-- Trabajo en una Vista
+/*A partir de la vista FechaContrato buscar a los empleados que están a
+punto de cumplir aniversario de contratación entre abril y mayo para
+mandarle una felicitación.*/
+
+SELECT * FROM FechaContrato
+WHERE MONTH(HireDate)<=5 AND MONTH(HireDate)>=4;
+
+-- Agrupadas
+CREATE VIEW SantaCruz2
+AS
+SELECT City, PostalCode
+FROM Person.Address GROUP BY City, PostalCode
+
+ALTER VIEW SantaCruz2
+AS
+SELECT City, PostalCode
+FROM Person.Address GROUP BY City, PostalCode
+
+--Eliminar Vista
+DROP VIEW IF EXISTS FechaContrato;
