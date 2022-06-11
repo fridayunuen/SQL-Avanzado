@@ -1,0 +1,36 @@
+-- Ejemplo de cursor 
+/*Este ejemplo muestra el nombre del producto y el precio de lista de la tabla Production.Product.*/
+
+USE AdventureWorks2019;
+GO
+--Hago el cursor
+DECLARE 
+    @NombreProducto VARCHAR(MAX), 
+    @PrecioDeLista   DECIMAL;
+
+DECLARE CursorProducto CURSOR
+FOR SELECT Name, ListPrice
+FROM Production.Product;
+
+--Abro el cursor
+OPEN CursorProducto;
+
+
+--Busco en cada renglón e imprimo el nombre del producto y el precio de lista
+FETCH NEXT FROM CursorProducto INTO 
+    @NombreProducto, 
+    @PrecioDeLista;
+
+WHILE @@FETCH_STATUS = 0
+    BEGIN
+        PRINT @NombreProducto + ' | ' + CAST(@PrecioDeLista AS varchar);
+        FETCH NEXT FROM CursorProducto INTO 
+            @NombreProducto, 
+			@PrecioDeLista;
+    END;
+
+--Cierro el cursor
+CLOSE CursorProducto;
+
+--Libero el cursor
+DEALLOCATE CursorProducto;
