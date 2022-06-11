@@ -1,0 +1,11 @@
+-- Ejemplo 
+
+USE AdventureWorks2019;
+GO
+
+CREATE TRIGGER Recordatorio  
+ON dbo.Borrame  
+AFTER INSERT, UPDATE, DELETE   
+AS RAISERROR ('Acaba de modificar la tabla dbo.Borrame verifique con su Administrador', 16, 10)
+--Mensaje, severidad,estado;  
+GO  
