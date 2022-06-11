@@ -1,0 +1,64 @@
+-- Consultas correlacionales
+/*Determina si un valor especificado coincide con cualquier valor en una subconsulta o una lista.
+Sintaxis:
+
+test_expression [ NOT ] IN
+( subquery | expression [ ,...n ]
+)
+
+1)test_expression: Es cualquier expresión válida.
+2)Subquery: Es una subconsulta que tiene un conjunto de resultados de una columna. Esta columna debe
+tener el mismo tipo de datos que test_expression.
+3)expression [ ,...n ]: Es una lista de expresiones para probar una coincidencia. Todas las expresiones deben
+ser del mismo tipo que test_expression.
+*/
+
+-- De la base de datos trabajo buscar los nombres de los empleados que son design engineers, tool designers, o marketing assistants.
+
+USE AdventureWorks2019;
+GO
+SELECT p.FirstName, p.LastName, e.JobTitle
+FROM Person.Person AS p
+JOIN HumanResources.Employee AS e
+ON p.BusinessEntityID = e.BusinessEntityID
+WHERE e.JobTitle = 'Design Engineer'
+OR e.JobTitle = 'Tool Designer'
+OR e.JobTitle = 'Marketing Assistant';
+
+--IN -----------------------------------------------------------------------------------------------------
+SELECT p.FirstName, p.LastName, e.JobTitle
+FROM Person.Person AS p
+JOIN HumanResources.Employee AS e
+ON p.BusinessEntityID = e.BusinessEntityID
+WHERE e.JobTitle IN ('Design Engineer', 'Tool Designer', 'Marketing Assistant');
+
+
+-- De la base de datos trabajo buscar los nombres de los empleados que tienen ventas superiores a 250 000.
+SELECT p.FirstName, p.LastName
+FROM Person.Person AS p
+JOIN Sales.SalesPerson AS sp
+ON p.BusinessEntityID = sp.BusinessEntityID
+WHERE p.BusinessEntityID IN
+(SELECT BusinessEntityID
+FROM Sales.SalesPerson
+WHERE Salesytd > 250000);
+
+-- NOT IN ---------------------------------------------------------------------------------------------------
+-- De la base de datos trabajo buscar los nombres de los empleados que no tienen ventas superiores a 250 000.
+
+SELECT p.FirstName, p.LastName
+FROM Person.Person AS p
+JOIN Sales.SalesPerson AS sp
+ON p.BusinessEntityID = sp.BusinessEntityID
+WHERE p.BusinessEntityID NOT IN
+(SELECT BusinessEntityID
+FROM Sales.SalesPerson
+WHERE SalesQuota > 250000);
+
+
+-- Consultas correlacionales (Usar IN con una lista de expresiones)----------------------------------------
+-- De la base de datos trabajo buscar los nombres de los empleados que no tienen ventas superiores a 250 000.
+SELECT FirstName, LastName
+FROM Person.Person
+WHERE FirstName IN ('Gustavo','Adriana','Pedro');
+
