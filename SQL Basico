@@ -1,0 +1,4 @@
+--Usar la base de datos actual
+USE AdventureWorks2019;
+GO
+
