@@ -1,0 +1,60 @@
+--Para conocer a los usuarios registrados:
+SELECT *
+FROM sysusers
+
+-- GRANT ---------------------------------------------------------------
+--Genero Catálogo TestDB
+--Creamos Test User
+USE TestDB;
+GO
+CREATE ROLE TestRole;
+GO
+CREATE USER TestUser WITHOUT LOGIN;
+GO
+EXEC sp_addrolemember @rolename = 'TestRole', @membername = 'TestUser';
+GO
+-- Compruebo que exista el nuevo usuario:
+SELECT *
+FROM sysusers
+
+--Creamos Tablas y Permisos
+CREATE SCHEMA Test;
+GO
+CREATE TABLE Test.TestTable (TableID int);
+GO
+--Permiso a Test.TestTable
+GRANT SELECT ON OBJECT::Test.TestTable TO TestRole;
+GO
+CREATE TABLE Test.TestTable2 (TableID int);
+GO
+
+--Verificamos condiciones de trabajo en las tablas
+EXECUTE AS USER = 'TestUser';
+GO
+SELECT * FROM Test.TestTable;
+GO
+--REVERT se usa para restablecer el contexto de ejecución a su estado anterior.
+REVERT;
+GO
+
+-- Verificamos si podemos trabajar con Test.TestTable2.
+EXECUTE AS USER = 'TestUser';
+GO
+-- Se mostrará que no tenemos permiso
+SELECT * FROM Test.TestTable2;
+GO
+REVERT;
+GO
+
+-- REVOKE elimina un permiso, ya sea GRANT o DENY. ---------------------------------------------------------------------
+USE TestdDB;
+GO
+-- Se elimina el permiso de TestRole;
+REVOKE SELECT ON OBJECT::Test.TestTable FROM TestRole;
+
+-- DENY bloquea a GRANT
+USE TestdDB;
+GO
+
+
+DENY SELECT ON OBJECT::Test.TestTable TO TestUser
