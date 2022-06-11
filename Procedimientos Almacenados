@@ -1,0 +1,213 @@
+-- CREATE PROCEDURE
+
+--Busco el nombre de la base de datos
+USE Ejemplos;
+GO
+
+SELECT DB_NAME() AS MiBase;
+
+CREATE PROCEDURE Que_Base_Es_Esta
+AS
+SELECT DB_NAME() AS MiBase;
+
+EXECUTE Que_Base_Es_Esta
+--o
+EXEC Que_Base_Es_Esta
+
+-- Procedimiento con argumentos-------------------------------------------------
+--@xx es el argumento, INT es el tipo de datos de entrada
+
+CREATE PROC Que_Numero_D_Base @ID INT
+AS
+SELECT DB_NAME(@ID) AS ThatDB;
+
+EXECUTE Que_Numero_D_Base 1;
+--Me indica qué base es de acuerdo al número de ID dentro del sistema
+
+
+/*Crear un procedimiento almacenado que devuelva el nombre de los empleados 
+(nombre y apellido), sus títulos de trabajo (JobTitle), su dirección completa 
+(AddressLine1, City, StateProvinceName y PostalCode)  su número telefónico y el 
+correo electrónico al que pertenecen desde la vista HumanResources.vEmployee de 
+AdventureWorks2019. */
+
+USE AdventureWorks2019;
+GO
+
+CREATE PROCEDURE HumanResources.MisEmpleados
+AS
+    SET NOCOUNT ON;
+    SELECT (FirstName + ' ' + LastName) AS Nombre, JobTitle, 
+	(AddressLine1 + ', ' + City + '. ' + StateProvinceName + '. CP: ' + PostalCode)   AS Dirección, 
+	PhoneNumber AS 'Teléfono',
+	EmailAddress As Correo
+    FROM HumanResources.vEmployee;
+GO
+
+/*SET NOCOUNT ON: Evita que el mensaje que muestra el recuento del número de 
+filas afectadas por una instrucción Transact-SQL o un procedimiento almacenado
+se devuelva como parte del conjunto de resultados. */
+
+-- Procedimiento que da dos conjuntos de datos--------------------------------
+USE AdventureWorks2019;
+GO
+
+CREATE PROCEDURE dbo.multiple
+AS
+select TOP(7) BusinessEntityID, FirstName, LastName from Sales.vIndividualCustomer;
+select TOP(7) BusinessEntityID, FirstName, LastName from Sales.vSalesPerson;
+GO
+
+-- Procedimientos con parámetros ----------------------------------------------
+
+USE AdventureWorks2019;
+GO
+
+-- 1 parámetro
+CREATE PROCEDURE HumanResources.pMiEmpleado
+@Nombre VARCHAR(150)
+AS
+    SET NOCOUNT ON;
+    SELECT FirstName, LastName, JobTitle, 
+	AddressLine1, City, StateProvinceName, PostalCode, 
+	PhoneNumber, 	EmailAddress 
+    FROM HumanResources.vEmployee
+WHERE FirstName like @Nombre;
+GO
+
+-- 2 parámetros
+/*Usando como modelos el siguiente código, haga un procedimiento almacenado 
+con el nombre Sales.pVentaPersonas en el que se obtengan los siguientes datos:
+ID_Empleado, Nombre, Apellido, Correo, Teléfono,	Ventas Último año, 
+FechaInicio de los vendedores con ventas de entre 1000000 y 1600000 y que se 
+encuentren activos*/
+
+SELECT s.BusinessEntityID AS ID_Empleado, FirstName AS Nombre, Lastname AS Apellido, 
+a.EmailAddress AS Correo, f.PhoneNumber AS Teléfono, 
+SalesLastYear AS 'Ventas Último año',h.StartDate AS FechaInicio
+FROM Person.Person p
+INNER JOIN Person.EmailAddress a
+ON (p.BusinessEntityID = a.BusinessEntityID)
+INNER JOIN Person.PersonPhone f
+ON (p.BusinessEntityID = f.BusinessEntityID)
+INNER JOIN Sales.SalesPerson s
+ON (p.BusinessEntityID = s.BusinessEntityID)
+INNER JOIN HumanResources.EmployeeDepartmentHistory AS h 
+ON (s.BusinessEntityID = h.BusinessEntityID)
+WHERE (h.EndDate IS NULL) AND p.BusinessEntityID = ANY
+  (SELECT BusinessEntityID
+	FROM Sales.SalesPerson
+  WHERE SalesLastYear >= 1000000)
+ORDER BY SalesLastYear DESC; 
+
+-- Sol
+
+CREATE PROCEDURE Sales.pVentaPersonas2
+@Minimo INT, @Maximo INT
+AS
+SET NOCOUNT ON;
+
+SELECT s.BusinessEntityID AS ID_Empleado, FirstName AS Nombre, Lastname AS Apellido, 
+a.EmailAddress AS Correo, f.PhoneNumber AS Teléfono, 
+SalesLastYear AS 'Ventas Último año',h.StartDate AS FechaInicio
+FROM Person.Person p
+INNER JOIN Person.EmailAddress a
+ON (p.BusinessEntityID = a.BusinessEntityID)
+INNER JOIN Person.PersonPhone f
+ON (p.BusinessEntityID = f.BusinessEntityID)
+INNER JOIN Sales.SalesPerson s
+ON (p.BusinessEntityID = s.BusinessEntityID)
+INNER JOIN HumanResources.EmployeeDepartmentHistory AS h 
+ON (s.BusinessEntityID = h.BusinessEntityID)
+WHERE (h.EndDate IS NULL) AND p.BusinessEntityID = ANY
+  (SELECT BusinessEntityID
+	FROM Sales.SalesPerson
+  WHERE (SalesLastYear BETWEEN @Minimo AND @Maximo) AND (h.EndDate IS NULL))
+ORDER BY SalesLastYear DESC; 
+GO
+
+-- Ejecutando el procedimiento
+EXEC Sales.pVentaPersonas2 @Minimo = 1000000, @Maximo = 1600000
+GO
+
+-- Parámetros de salida ----------------------------------------------------
+/*Los parámetros OUTPUT permiten que un procedimiento externo, un lote o más 
+de una instrucción Transact-SQL accedan a un valor establecido durante la
+ejecución del procedimiento. */
+
+/* El procedimiento devuelve una lista de productos (@Producto) que tienen 
+precios que no superan una cantidad especificada (@PrecioMax).*/
+
+	IF OBJECT_ID ( 'Production.pListaComprativa', 'P' ) IS NOT NULL
+		DROP PROCEDURE Production.pListaComprativa;
+	GO  
+	CREATE PROCEDURE Production.pListaComprativa @Producto VARCHAR(40)
+		, @PrecioMax MONEY
+		, @ComparaPrecio MONEY OUTPUT
+		, @PrecioLista MONEY OUT
+	AS  
+		SET NOCOUNT ON;
+		SELECT p.[Name] AS Product, p.ListPrice AS 'List Price'
+		FROM Production.Product AS p
+		JOIN Production.ProductSubcategory AS s
+		  ON p.ProductSubcategoryID = s.ProductSubcategoryID
+		WHERE s.[Name] LIKE @Producto AND p.ListPrice < @PrecioMax;
+	-- Llena la variable de salida @PrecioLista.
+	SET @PrecioLista = (SELECT MAX(p.ListPrice)
+		FROM Production.Product AS p
+		JOIN Production.ProductSubcategory AS s
+		  ON p.ProductSubcategoryID = s.ProductSubcategoryID
+		WHERE s.[Name] LIKE @Producto AND p.ListPrice < @PrecioMax);
+	-- Llena la variable de salida @ComparaPrecio.
+	SET @ComparaPrecio = @PrecioMax;
+	GO
+
+-- Uso del procedimiento
+
+/*Se obtiene una lista de productos de AdventureWorks2019 
+(bicicletas -'%Bikes%'-) que cuestan menos de $700. 
+Los parámetros de SALIDA @Costo y @ComparaPrecio se utilizan con lenguaje de 
+control de flujo para devolver un mensaje en la ventana Mensajes*/
+
+DECLARE @ComparaPrecio MONEY, @Costo MONEY;
+EXECUTE Production.pListaComprativa '%Bikes%', 700,
+    @ComparaPrecio OUT,
+    @Costo OUTPUT
+IF @Costo <= @ComparaPrecio
+BEGIN
+    PRINT 'Estos productos se pueden comprar por menos de
+    $'+RTRIM(CAST(@ComparaPrecio AS VARCHAR(20)))+'.'
+END
+ELSE
+    PRINT 'Todos los precios de esta categoría exceden los: 
+    $'+ RTRIM(CAST(@ComparaPrecio AS VARCHAR(20)))+'.';
+
+-- Eliminar procedimiento ----------------------------------------------------
+
+USE AdventureWorks2019;
+GO
+
+CREATE PROCEDURE miProcSuma
+@a as int,
+@b as int
+AS
+BEGIN
+SELECT @a + @b as suma
+END
+GO
+
+DROP PROCEDURE [dbo].[usp_InsertProductionLocation];
+GO
+
+-- Elimina registros con un procedimiento
+SELECT * INTO HumanResources.Empleados FROM HumanResources.Employee
+
+CREATE PROCEDURE HumanResources.Empleados
+@MayorQue INT
+AS
+DELETE FROM  dbo.Borrame 
+WHERE VacationHours > @MayorQue;
+GO
+
+
+
