@@ -2,3 +2,32 @@
 USE AdventureWorks2019;
 GO
 
+
+-- ¿Que hay dentro de la base de datos AdventureWorks2019?
+SELECT * FROM [AdventureWorks2019].
+[INFORMATION_SCHEMA].[TABLES]
+ORDER BY TABLE_SCHEMA
+
+
+-- Lista de procedimientos en una base de datos
+SELECT * FROM [INFORMATION_SCHEMA].[ROUTINES]
+WHERE routine_type='PROCEDURE'
+
+-- Primeros 10 registros de la tabla de Sales.SalesOrderDetail ordenados por la columna ProductID.
+SELECT TOP 10 * FROM Sales.SalesOrderDetail
+ORDER BY ProductID
+
+--Selecciono los 10 primeros registros en los que el nombre delproducto tiene una 'CH'
+SELECT TOP 10 * FROM Production.Product
+WHERE Name LIKE '%Ch%'
+ORDER BY ProductID
+
+--Primeros 10 registros de la tabla de Sales.SalesOrderDetail, que además contenga el nombre del producto (tabla Production.Product)
+--ordenados por la columna ProductID
+SELECT TOP 10 SalesOrderDetail.*, Production.Product.Name
+FROM Sales.SalesOrderDetail
+INNER JOIN Production.Product
+ON Sales.SalesOrderDetail.ProductID = Production.Product.ProductID
+ORDER BY ProductID
+
+
